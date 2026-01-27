@@ -120,52 +120,63 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null; // ← ADD THIS
+  token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
-  setToken: (token: string | null) => void; // ← ADD THIS (optional but useful)
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setTokenState] = useState<string | null>(null); // ← ADD THIS STATE
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Initialize token from localStorage on app start
+  // Load token from localStorage on app start
   useEffect(() => {
     const savedToken = localStorage.getItem('auth_token');
     if (savedToken) {
-      setTokenState(savedToken);
+      setToken(savedToken);
+      console.log('📱 Token loaded from localStorage:', savedToken.substring(0, 20) + '...');
     }
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
+      const tokenToUse = token || localStorage.getItem('auth_token');
+      
+      if (!tokenToUse) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
       const response = await fetch('/api/auth/me', {
-        headers: token ? {
-          'Authorization': `Bearer ${token}` // ← USE THE TOKEN
-        } : {}
+        headers: {
+          'Authorization': `Bearer ${tokenToUse}`,
+          'Content-Type': 'application/json'
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+        console.log('✅ Auth check passed, user:', data.user.email);
       } else {
+        console.log('❌ Auth check failed, clearing token');
         setUser(null);
-        setTokenState(null);
+        setToken(null);
         localStorage.removeItem('auth_token');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       setUser(null);
-      setTokenState(null);
+      setToken(null);
       localStorage.removeItem('auth_token');
     } finally {
       setLoading(false);
@@ -173,9 +184,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
+    console.log('🔐 Login attempt for:', email);
+    
     const response = await fetch('/api/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ email, password }),
     });
 
@@ -185,14 +201,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const data = await response.json();
+    console.log('📦 Login API response:', data);
     
-    // ✅ CRITICAL: Save the token
-    const authToken = data.token || data.access_token;
-    setTokenState(authToken);
-    localStorage.setItem('auth_token', authToken);
+    // ⭐⭐⭐ CRITICAL: Save token from API response ⭐⭐⭐
+    if (data.token) {
+      setToken(data.token);
+      localStorage.setItem('auth_token', data.token);
+      console.log('✅ Token saved to localStorage:', data.token.substring(0, 30) + '...');
+    } else {
+      console.error('❌ FATAL: No token in API response:', data);
+      throw new Error('Authentication failed - no token received from server');
+    }
     
-    await checkAuth();
+    // ⭐⭐⭐ CRITICAL: Update user state ⭐⭐⭐
+    if (data.user) {
+      setUser(data.user);
+      console.log('✅ User state updated:', data.user.email);
+    }
+    
+    // ⭐⭐⭐ Redirect happens here, NOT in LoginPage ⭐⭐⭐
+    console.log('🚀 Redirecting to /dashboard...');
     router.push('/dashboard');
+    router.refresh(); // Force refresh to update server components
   };
 
   const signup = async (name: string, email: string, password: string) => {
@@ -209,50 +239,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json();
     
-    // ✅ Save token on signup too
-    const authToken = data.token || data.access_token;
-    setTokenState(authToken);
-    localStorage.setItem('auth_token', authToken);
+    // Save token on signup too
+    if (data.token) {
+      setToken(data.token);
+      localStorage.setItem('auth_token', data.token);
+    }
     
-    await checkAuth();
+    if (data.user) {
+      setUser(data.user);
+    }
+    
     router.push('/dashboard');
   };
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { 
-      method: 'POST',
-      headers: token ? {
-        'Authorization': `Bearer ${token}`
-      } : {}
-    });
+    console.log('👋 Logging out...');
     
-    setUser(null);
-    setTokenState(null); // ← Clear token
-    localStorage.removeItem('auth_token'); // ← Clear from storage
-    router.push('/login');
-  };
-
-  // Helper function to update token
-  const setToken = (newToken: string | null) => {
-    setTokenState(newToken);
-    if (newToken) {
-      localStorage.setItem('auth_token', newToken);
-    } else {
-      localStorage.removeItem('auth_token');
+    try {
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.log('Logout API error (continuing anyway):', error);
     }
+    
+    // Clear everything locally
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
+    
+    console.log('✅ Cleared all auth data');
+    router.push('/login');
+    router.refresh();
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token, // ← NOW INCLUDED IN CONTEXT
+        token,
         loading,
         login,
         signup,
         logout,
         checkAuth,
-        setToken, // Optional but useful
       }}
     >
       {children}
