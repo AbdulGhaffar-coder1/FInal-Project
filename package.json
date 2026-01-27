@@ -8,6 +8,7 @@
   "dependencies": {
     "@daily-co/daily-js": "^0.62.0",
     "bcrypt": "^5.1.1",
+    "jose": "^6.1.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.309.0",
     "mongoose": "^8.21.1",
