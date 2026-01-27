@@ -183,47 +183,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // const login = async (email: string, password: string) => {
+  //   console.log('🔐 Login attempt for:', email);
+    
+  //   const response = await fetch('/api/auth/login', {
+  //     method: 'POST',
+  //     headers: { 
+  //       'Content-Type': 'application/json',
+  //       'Accept': 'application/json'
+  //     },
+  //     body: JSON.stringify({ email, password }),
+  //   });
+
+  //   if (!response.ok) {
+  //     const error = await response.json();
+  //     throw new Error(error.message || 'Login failed');
+  //   }
+
+  //   const data = await response.json();
+  //   console.log('📦 Login API response:', data);
+    
+  //   // ⭐⭐⭐ CRITICAL: Save token from API response ⭐⭐⭐
+  //   if (data.token) {
+  //     setToken(data.token);
+  //     localStorage.setItem('auth_token', data.token);
+  //     console.log('✅ Token saved to localStorage:', data.token.substring(0, 30) + '...');
+  //   } else {
+  //     console.error('❌ FATAL: No token in API response:', data);
+  //     throw new Error('Authentication failed - no token received from server');
+  //   }
+    
+  //   // ⭐⭐⭐ CRITICAL: Update user state ⭐⭐⭐
+  //   if (data.user) {
+  //     setUser(data.user);
+  //     console.log('✅ User state updated:', data.user.email);
+  //   }
+    
+  //   // ⭐⭐⭐ Redirect happens here, NOT in LoginPage ⭐⭐⭐
+  //   console.log('🚀 Redirecting to /dashboard...');
+  //   router.push('/dashboard');
+  //   router.refresh(); // Force refresh to update server components
+  // };
   const login = async (email: string, password: string) => {
-    console.log('🔐 Login attempt for:', email);
-    
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ email, password }),
-    });
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Login failed');
-    }
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Login failed');
+  }
 
-    const data = await response.json();
-    console.log('📦 Login API response:', data);
-    
-    // ⭐⭐⭐ CRITICAL: Save token from API response ⭐⭐⭐
-    if (data.token) {
-      setToken(data.token);
-      localStorage.setItem('auth_token', data.token);
-      console.log('✅ Token saved to localStorage:', data.token.substring(0, 30) + '...');
-    } else {
-      console.error('❌ FATAL: No token in API response:', data);
-      throw new Error('Authentication failed - no token received from server');
-    }
-    
-    // ⭐⭐⭐ CRITICAL: Update user state ⭐⭐⭐
-    if (data.user) {
-      setUser(data.user);
-      console.log('✅ User state updated:', data.user.email);
-    }
-    
-    // ⭐⭐⭐ Redirect happens here, NOT in LoginPage ⭐⭐⭐
-    console.log('🚀 Redirecting to /dashboard...');
-    router.push('/dashboard');
-    router.refresh(); // Force refresh to update server components
-  };
+  const data = await response.json();
+  
+  // ⭐⭐⭐ ADD THIS ONE LINE ⭐⭐⭐
+  localStorage.setItem('auth_token', data.token);
+  // ⭐⭐⭐ THAT'S IT! ⭐⭐⭐
+  
+  await checkAuth();
+  router.push('/dashboard');
+};
 
   const signup = async (name: string, email: string, password: string) => {
     const response = await fetch('/api/auth/signup', {
