@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
+    // ⭐⭐⭐ FIXED: Now returns token in JSON response ⭐⭐⭐
     return NextResponse.json(
       {
         message: 'User created successfully',
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
           name: user.name,
           email: user.email,
         },
+        token: token, // ⭐⭐⭐ THIS LINE WAS MISSING - NOW ADDED ⭐⭐⭐
       },
       { status: 201 }
     );

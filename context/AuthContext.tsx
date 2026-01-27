@@ -246,33 +246,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   router.push('/dashboard');
 };
 
-  const signup = async (name: string, email: string, password: string) => {
-    const response = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
+ const signup = async (name: string, email: string, password: string) => {
+  const response = await fetch('/api/auth/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password }),
+  });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Signup failed');
-    }
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Signup failed');
+  }
 
-    const data = await response.json();
-    
-    // Save token on signup too
-    if (data.token) {
-      setToken(data.token);
-      localStorage.setItem('auth_token', data.token);
-    }
-    
-    if (data.user) {
-      setUser(data.user);
-    }
-    
-    router.push('/dashboard');
-  };
-
+  const data = await response.json();
+  
+  // ⭐⭐⭐ ADD THIS - Save token from signup response ⭐⭐⭐
+  if (data.token) {
+    localStorage.setItem('auth_token', data.token);
+  }
+  // ⭐⭐⭐ END OF ADDITION ⭐⭐⭐
+  
+  setUser(data.user);
+  router.push('/dashboard');
+};
   const logout = async () => {
     console.log('👋 Logging out...');
     
