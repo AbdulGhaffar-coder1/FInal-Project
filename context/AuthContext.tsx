@@ -240,6 +240,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // ⭐⭐⭐ ADD THIS ONE LINE ⭐⭐⭐
   localStorage.setItem('auth_token', data.token);
+   // ⭐⭐⭐ ADD THESE 2 LINES RIGHT HERE ⭐⭐⭐
+  setToken(data.token);
+  setUser(data.user);
   // ⭐⭐⭐ THAT'S IT! ⭐⭐⭐
   
   await checkAuth();
@@ -263,6 +266,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ⭐⭐⭐ ADD THIS - Save token from signup response ⭐⭐⭐
   if (data.token) {
     localStorage.setItem('auth_token', data.token);
+     // ⭐⭐⭐ ADD THESE 2 LINES RIGHT HERE ⭐⭐⭐
+  setToken(data.token);
+  setUser(data.user);
   }
   // ⭐⭐⭐ END OF ADDITION ⭐⭐⭐
   
