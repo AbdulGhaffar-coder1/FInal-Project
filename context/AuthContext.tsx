@@ -146,42 +146,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
+  // const checkAuth = async () => {
+  //   try {
+  //     const tokenToUse = token || localStorage.getItem('auth_token');
+      
+  //     if (!tokenToUse) {
+  //       setUser(null);
+  //       setLoading(false);
+  //       return;
+  //     }
+      
+  //     const response = await fetch('/api/auth/me', {
+  //       headers: {
+  //         'Authorization': `Bearer ${tokenToUse}`,
+  //         'Content-Type': 'application/json'
+  //       }
+  //     });
+      
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUser(data.user);
+  //       console.log('✅ Auth check passed, user:', data.user.email);
+  //     } else {
+  //       console.log('❌ Auth check failed, clearing token');
+  //       setUser(null);
+  //       setToken(null);
+  //       localStorage.removeItem('auth_token');
+  //     }
+  //   } catch (error) {
+  //     console.error('Auth check failed:', error);
+  //     setUser(null);
+  //     setToken(null);
+  //     localStorage.removeItem('auth_token');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const checkAuth = async () => {
-    try {
-      const tokenToUse = token || localStorage.getItem('auth_token');
-      
-      if (!tokenToUse) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${tokenToUse}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        console.log('✅ Auth check passed, user:', data.user.email);
-      } else {
-        console.log('❌ Auth check failed, clearing token');
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('auth_token');
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
+  try {
+    const response = await fetch('/api/auth/me', {
+      credentials: 'include', // 🔥 SEND COOKIE
+    });
+
+    const data = await response.json();
+
+    if (data.user) {
+      setUser(data.user);
+      console.log('✅ Auth check passed:', data.user.email);
+    } else {
       setUser(null);
-      setToken(null);
-      localStorage.removeItem('auth_token');
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    setUser(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // const login = async (email: string, password: string) => {
   //   console.log('🔐 Login attempt for:', email);
@@ -224,10 +247,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //   router.push('/dashboard');
   //   router.refresh(); // Force refresh to update server components
   // };
-  const login = async (email: string, password: string) => {
+ const login = async (email: string, password: string) => {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // 🔥 REQUIRED for cookies
     body: JSON.stringify({ email, password }),
   });
 
@@ -237,17 +261,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const data = await response.json();
-  
-  // ⭐⭐⭐ ADD THIS ONE LINE ⭐⭐⭐
-  localStorage.setItem('auth_token', data.token);
-   // ⭐⭐⭐ ADD THESE 2 LINES RIGHT HERE ⭐⭐⭐
-  setToken(data.token);
+
+  // Backend already set the HttpOnly cookie
   setUser(data.user);
-  // ⭐⭐⭐ THAT'S IT! ⭐⭐⭐
-  
-  await checkAuth();
+
   router.push('/dashboard');
 };
+
 
  const signup = async (name: string, email: string, password: string) => {
   const response = await fetch('/api/auth/signup', {
