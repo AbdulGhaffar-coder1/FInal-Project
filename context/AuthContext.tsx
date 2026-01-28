@@ -50,27 +50,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include', // important: cookie-based
-      });
+ const login = async (email: string, password: string) => {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    credentials: 'include', // important! sends cookies
+  });
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Login failed');
-      }
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Login failed');
+  }
 
-      await checkAuth(); // fetch /me after login
-      router.push('/dashboard'); // redirect to dashboard
-    } catch (err) {
-      console.error('Login failed:', err);
-      throw err;
-    }
-  };
+  const data = await response.json();
+  setUser(data.user);         // update user state
+  router.push('/dashboard');  // redirect
+};
+
 
   const signup = async (name: string, email: string, password: string) => {
     try {
