@@ -184,26 +184,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // };
 
   const checkAuth = async () => {
+  setLoading(true);
   try {
-    const response = await fetch('/api/auth/me', {
-      credentials: 'include', // 🔥 SEND COOKIE
-    });
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    const data = await res.json();
 
-    const data = await response.json();
+    if (data.user) setUser(data.user);
+    else setUser(null);
 
-    if (data.user) {
-      setUser(data.user);
-      console.log('✅ Auth check passed:', data.user.email);
-    } else {
-      setUser(null);
-    }
-  } catch (error) {
-    console.error('Auth check failed:', error);
+    console.log('Auth check response:', data);
+  } catch (err) {
+    console.error('Auth check failed:', err);
     setUser(null);
   } finally {
     setLoading(false);
   }
 };
+
 
 
   // const login = async (email: string, password: string) => {
@@ -251,8 +248,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 🔥 REQUIRED for cookies
     body: JSON.stringify({ email, password }),
+    credentials: 'include', // important!
   });
 
   if (!response.ok) {
@@ -260,13 +257,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     throw new Error(error.message || 'Login failed');
   }
 
-  const data = await response.json();
-
-  // Backend already set the HttpOnly cookie
-  setUser(data.user);
-
+  await checkAuth(); // checkAuth now fetches /me with cookies
   router.push('/dashboard');
 };
+
 
 
  const signup = async (name: string, email: string, password: string) => {
